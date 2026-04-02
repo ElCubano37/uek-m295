@@ -1,0 +1,209 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Task API",
+    "version": "1.0.0",
+    "description": "REST API zur Verwaltung von Tasks mit Token-basierter Authentifizierung."
+  },
+  "servers": [
+    { "url": "http://localhost:3000", "description": "Lokaler Entwicklungsserver" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Token zuerst via POST /login holen, dann hier eintragen."
+      }
+    },
+    "schemas": {
+      "Task": {
+        "type": "object",
+        "properties": {
+          "id":          { "type": "string", "format": "uuid",      "example": "550e8400-e29b-41d4-a716-446655440000" },
+          "title":       { "type": "string",                        "example": "Hausaufgaben machen" },
+          "description": { "type": "string",  "nullable": true,     "example": "Mathe und Deutsch" },
+          "createdAt":   { "type": "string",  "format": "date-time" },
+          "dueDate":     { "type": "string",  "format": "date-time", "nullable": true },
+          "completedAt": { "type": "string",  "format": "date-time", "nullable": true }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "example": "Task nicht gefunden" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Einloggen und Token erhalten",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email":    { "type": "string", "format": "email", "example": "admin@example.com" },
+                  "password": { "type": "string",                    "example": "1234" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login erfolgreich – Token wird zurückgegeben",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "token":   { "type": "string", "format": "uuid" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "E-Mail oder Passwort falsch",        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "422": { "description": "E-Mail oder Passwort fehlt im Body", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/verify": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Token auf Gültigkeit prüfen",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Token ist gültig",    "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "401": { "description": "Token ist ungültig",  "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/logout": {
+      "delete": {
+        "tags": ["Auth"],
+        "summary": "Ausloggen – Token ungültig machen",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Erfolgreich ausgeloggt", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/tasks": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Alle Tasks zurückgeben",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Liste aller Tasks",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Task" } }
+              }
+            }
+          },
+          "401": { "description": "Nicht autorisiert", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "post": {
+        "tags": ["Tasks"],
+        "summary": "Neuen Task erstellen",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title"],
+                "properties": {
+                  "title":       { "type": "string",                         "example": "Einkaufen gehen" },
+                  "description": { "type": "string",                         "example": "Milch, Brot, Käse" },
+                  "dueDate":     { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Task erstellt",          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } },
+          "401": { "description": "Nicht autorisiert",      "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "422": { "description": "title fehlt oder leer",  "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/tasks/{id}": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Einzelnen Task anhand ID zurückgeben",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "string" }, "description": "UUID des Tasks" }],
+        "responses": {
+          "200": { "description": "Task gefunden",        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } },
+          "401": { "description": "Nicht autorisiert",    "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "404": { "description": "Task nicht gefunden",  "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "put": {
+        "tags": ["Tasks"],
+        "summary": "Bestehenden Task aktualisieren",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title":       { "type": "string" },
+                  "description": { "type": "string" },
+                  "dueDate":     { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Task aktualisiert",    "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } },
+          "401": { "description": "Nicht autorisiert",    "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "404": { "description": "Task nicht gefunden",  "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "422": { "description": "title ist leer",       "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "delete": {
+        "tags": ["Tasks"],
+        "summary": "Task löschen",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Task gelöscht",        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "401": { "description": "Nicht autorisiert",    "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "404": { "description": "Task nicht gefunden",  "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/tasks/{id}/done": {
+      "post": {
+        "tags": ["Tasks"],
+        "summary": "Task als erledigt markieren",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "completedAt wurde gesetzt", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Task" } } } },
+          "401": { "description": "Nicht autorisiert",         "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "404": { "description": "Task nicht gefunden",       "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    }
+  }
+}
