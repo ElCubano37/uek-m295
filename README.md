@@ -10,4 +10,4 @@ Zum starten der App benutze den Befehl: `node main.js`. Stelle sicher, dass du i
 
 ## OpenAPI und Swagger
 
-Um die OpenAPI Dokumentation zu öffnen muss zuerst die App gestartet werden. Anschliessend kann man folgenden Link öffnen: [{http://localhost:3000/api-docs}]
+Um die OpenAPI Dokumentation zu öffnen muss zuerst die App gestartet werden. Anschliessend kann man folgenden Link öffnen: `http://localhost:3000/api-docs`
