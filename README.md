@@ -4,9 +4,10 @@
 
 ## Aufsetzen und starten der APP
 
-Benutze den befehl `npm install` um die nötigen module zu installieren. 
+Benutze den Befehl `npm install` um die nötigen Module zu installieren. 
 
-Zum starten der App benutze den befehl: `node main.js`. Stelle sicher, dass du im richtigen Verzeichnis bist. 
+Zum starten der App benutze den Befehl: `node main.js`. Stelle sicher, dass du im richtigen Verzeichnis bist. 
 
 ## RestAPI und Swagger
+
 
